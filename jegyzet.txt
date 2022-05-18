@@ -1,0 +1,156 @@
+Teljesen új Solution
+
+1.
+Create a new project - Class library - VikingLottoAdatbazis
+
+Solution név VikingLotto0430
+
+2.
+Slution nevén jobb klikk/Add/New Project - Console Application - VikingAdatImport
+
+3.
+Slution nevén jobb klikk/Add/New Project - Windows Forms App - VikingSzimulacio
+
+4. 
+VikingAdatImport/Jobb klikk/Add/Project Reference/VikingLottoAdatBazis pipa/OK
+
+5.
+VikingSzimulacio/Jobb klikk/Add/Project Reference/VikingLottoAdatBazis pipa/OK
+
+6.
+Tools/NuGet Package Manager/Manage Nuget Packages for Solution...
+	EntityFrameworkCore
+	Core.SqlServer
+	Core.Tools
+
+7.
+VikingLottoAdatbazis/Class.cs/Jobb klikk átnevezés - LottoSzam.cs
+
+public class LottoSzam
+    {
+        public int Id { get; set; }
+        public int Szam1 { get; set; }
+        public int Szam2 { get; set; }
+        public int Szam3 { get; set; }
+        public int Szam4 { get; set; }
+        public int Szam5 { get; set; }
+        public int Szam6 { get; set; }
+
+        public LottoSzam()
+        {
+        }
+
+        public LottoSzam(string sor)
+        {
+            string[] tombSzoveg = sor.Trim().Split(";");
+            if (tombSzoveg.Length == 6)
+            {
+                int[] tombSzam = new int[6];
+                for (int i = 0; i < 6; i++)
+                {
+                    try
+                    {
+                        tombSzam[i] = Convert.ToInt32(tombSzoveg[i].Trim());
+                    }
+                    catch (Exception)
+                    {
+                        throw new Exception();
+                    }
+                    if ((tombSzam[i]<1) || (tombSzam[i] > 48)) throw new Exception();
+                }
+                HashSet<int> halmaz = new HashSet<int>(tombSzam);
+                if (halmaz.Count() != 6) throw new Exception();
+
+                // Minden szép és jó!
+                Szam1 = tombSzam[0];
+                Szam2 = tombSzam[1];
+                Szam3 = tombSzam[2];
+                Szam4 = tombSzam[3];
+                Szam5 = tombSzam[4];
+                Szam6 = tombSzam[5];
+            }
+            else
+            {
+                throw new Exception(); 
+            }
+            
+        }
+    }
+
+8. 
+VikingLottoAdatBazis/Add/Class - VikingContext
+
+public class VikingContext:DbContext
+    {
+        public DbSet<LottoSzam> LottoSzamok { get; set; }
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlServer(@"Server=(localdb)\mssqllocaldb;Database=Viking0430;Trusted_Connection=true");
+        }
+    }
+
+9.
+
+Add-migration
+Update-database
+
+10. 
+VikingAdatImport/Program
+
+class Program
+    {
+        static void Main(string[] args)
+        {
+            VikingContext db = new VikingContext();
+            if (!db.LottoSzamok.Any())
+            {
+                string[] sorok = null;
+                bool sikeresFileNyitas = true;
+                //Console.WriteLine(args[0]);
+                try
+                {
+                    sorok = File.ReadAllLines(args[0]);
+                }
+                catch (Exception)
+                {
+                    sikeresFileNyitas = false;
+                    Console.WriteLine("A megadott fájlnév nem megfelelõ! pl.:filaname.csv");
+                }
+                if (sikeresFileNyitas)
+                {
+                    List<LottoSzam> szamok = new List<LottoSzam>();
+                    foreach (var sor in sorok)
+                    {
+                        try
+                        {
+                            szamok.Add(new LottoSzam(sor));
+                        }
+                        catch (Exception)
+                        {    }
+                    }
+                    db.LottoSzamok.AddRange(szamok);
+                    db.SaveChanges();
+                    Console.WriteLine("Sorok száma: "+db.LottoSzamok.Count()+" db");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Az adattábla már létezik!");
+            }
+        }
+    }
+11. VikimgSzimulacio/Program
+
+{
+        /// <summary>
+        ///  The main entry point for the application.
+        /// </summary>
+        [STAThread]
+        static void Main()
+        {
+            Application.SetHighDpiMode(HighDpiMode.SystemAware);
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new Form1());
+        }
+    }
